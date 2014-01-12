@@ -4,18 +4,18 @@ param (
 
 function Main($configFiles) {
 	foreach ($configFile in $configFiles) {
-		CheckFileAndEval($configFile)
+		CheckFileAndGenerate($configFile)
 	}
 }	
 
-function CheckFileAndEval($fileString) {
+function CheckFileAndGenerate($fileString) {
 	$fileExists = Test-Path $fileString
 
 	if ( ! $fileExists ) {
-		Write-Host "$fileString`: File does not exist, or is invalid. Please ensure that the direct path to the source file is provided. `n" -f Yellow
+		Write-Host "$fileString`: File does not exist, or is invalid. Please ensure that the correct path to the source file is provided. `n" -f Yellow
 	}
 	else {
-		Write-Host "Generationg config for file`: $fileString ... `n" -f Blue
+		Write-Host "Generationg config for file`: $fileString ..." -f Blue
 		$fileResolved = Get-ChildItem $fileString
 		WriteToOutput($fileResolved)
 	}
@@ -25,13 +25,11 @@ function WriteToOutput($file) {
 	
 	$header = "<?xml version=`"1.0`" encoding=`"utf-8`"?>"
 	$openingTag = "<packages>"
-	$packagesList = ""
 	$closingTag = "</packages>"
 	
-	$outputFolder = $file.DirectoryName
-	$outputFileName = $file.BaseName
+	$outputFile = GetOutputFile($file)
 	
-	$stream = [System.IO.StreamWriter] "$outputFolder\$outputFileName.config"
+	$stream = [System.IO.StreamWriter] $outputFile
 	
 	$stream.WriteLine($header)
 	$stream.WriteLine($openingTag)
@@ -43,6 +41,16 @@ function WriteToOutput($file) {
 	$stream.WriteLine($closingTag)
 	
 	$stream.Close()
+	
+	Write-Host "Config file present at $outputFile `n" -f Blue
+}
+
+function GetOutputFile($file) {
+	$parentInputFolder = Split-Path $file.Directory -Parent
+	$outputFolder = "$parentInputFolder\Output Files"
+	$outputFileName = $file.BaseName
+	$outputFile = "$outputFolder\$outputFileName.config"
+	return $outputFile
 }
 
 Main($configFiles)
